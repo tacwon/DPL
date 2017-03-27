@@ -48,17 +48,23 @@ class DPLTwoLayerNet:
         self.i = (self.i+1) % self.i_size
         return self.i 
         
-    def predict(self):
+    def DPLpredict(self):
         i = self.i_rand[self.i]
-        Wt1b1 = self.FirstAffine.forward(i)
+        Wt1b1 = self.FirstAffine.DPLforward(i)
+        Relu = self.Relu.forward(Wt1b1)
+        W2b2 = self.LastAffine.forward(Relu)
+#       print("x,Wt1b1,Relu,W2b2",x.shape,Wt1b1.shape,Relu.shape,W2b2.shape)
+        return W2b2
+    
+    def predict(self):
+        Wt1b1 = self.FirstAffine.forward()
         Relu = self.Relu.forward(Wt1b1)
         W2b2 = self.LastAffine.forward(Relu)
 #       print("x,Wt1b1,Relu,W2b2",x.shape,Wt1b1.shape,Relu.shape,W2b2.shape)
         return W2b2
     
     def loss(self):
-        
-        y = self.predict()
+        y = self.DPLpredict()
         return self.lastlayers.forward(y,self.t)
     
     def accuracy(self):
