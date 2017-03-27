@@ -14,20 +14,19 @@ from TwoLayerNet import DPLTwoLayerNet
 # データの読み込み
 (x_train, t_train), (x_test, t_test) = load_mnist(normalize=True, one_hot_label=True)
 
-
-network = DPLTwoLayerNet(input_size=784, hidden_size=50, output_size=10)
-
 x_batch = x_train[:3]
 t_batch = t_train[:3]
 
+network = DPLTwoLayerNet(input_size=784,hidden_size=50, output_size=10)
+network.set_batch(x_batch,t_batch)
 
 #print (x_batch.shape)
 #print(t_batch.shape)
 
 #print("Numeriacal")
-grad_numerical = network.numerical_gradient(x_batch, t_batch)
+grad_numerical = network.numerical_gradient()
 #print("backprop")
-grad_backprop = network.gradient(x_batch, t_batch)
+grad_backprop = network.gradient()
 
 for key in grad_numerical.keys():
     diff = np.average( np.abs(grad_backprop[key] - grad_numerical[key]) )

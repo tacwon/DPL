@@ -7,83 +7,54 @@ Created on Sat Mar 18 17:48:03 2017
 """
 import numpy as np
         
-class FirstAffine:
+class PathAffine:
     def __init__(self,w,b):
-        self.W = w             # 50,784 (out,in)
+        self.W = w             # 784,50 (in,out)
         self.b = b             # 50     (out)
         self.i = None
         self.x = None         # N*784
         self.dW = np.zeros_like(w) #50,784
         self.db = np.zeros_like(b) #50
-    def init_Affine(self,dx,i):
-        self.dx = dx  # N*50
-        self.i = i
         
-    def forward(self,x,i):
-        self.x = x
-        self.i = i             # output index
-        out = np.dot(x,self.W[i])+self.b[i]       #DPL
-    #    out = np.dot(x,self.W.T)+self.b              #original
+    def init_Affine(self,x,out):
+        self.x = x                  # N*784
+        self.out = out              # N*50
         
- #       print("FirstAffine_Forward x,W,out", x.shape,self.W.shape,out.shape)
-        return out
-    def backward(self,dout):    #dout:N
+    def forward(self,i):
+        W = self.W[:,i:i+1]
+#       print("FirstAffine_Forward x,W,b,W,out", self.x.shape,self.W.shape,self.b.shape,W.shape,self.out.shape)
+    
+        self.out[self.i] = np.dot(self.x,W)+self.b[self.i]       
+        return self.out
+    def backward(self,dout):    #dout:N*50
 #        print("FirstAffine_Backward dout,W,x", dout.shape,self.W.shape,self.x.shape)
         
-        dx = np.outer(dout,self.W[self.i])
-        self.dW[self.i] = np.dot(self.x.T,dout)
-        self.db[self.i] = np.sum(dout,axis=0)
+        dx = np.dot(dout,self.W.T)
+        self.dW = np.dot(self.x.T,dout)
+        self.db = np.sum(dout,axis=0)
         
-#        dx = np.dot(dout,self.W)
-#       self.dW = np.dot(self.x.T,dout)
-#        self.db = np.sum(dout,axis=0)
         return dx
 
-class LastAffine:
+class Affine:
     def __init__(self,w,b):
         self.W = w             # 50,10 (in,out)
         self.b = b             # 10   (out)
-        self.i = None
-        self.x = None          # N
-        self.dW = np.zeros_like(w) #50,10
+        self.x = None          # N*50
+        self.dW = None         #50,10
         self.db = None             #10
  #       print("LastAffine_init",self.W.shape,self.b.shape)
     
-    def forward(self,x,i):
-        self.x = x
-        self.i = i         # input index 
-        out = np.outer(self.x,self.W[i])+self.b
+    def forward(self,x):
+        self.x = x               #N*50
+        out = np.dot(self.x,self.W)+self.b
         return out
     
-    def backward(self,dout):    #dout:10
-        dx = np.dot(dout,self.W[self.i])
+    def backward(self,dout):    #dout:N,10
+        dx = np.dot(dout,self.W.T)
  #       print("backward dout,W,dx,x",dout.shape,self.W.shape,dx.shape,self.x.shape)
-        self.dW[self.i] = np.dot(self.x,dout)
+        self.dW = np.dot(self.x.T,dout)
         self.db = np.sum(dout,axis=0)
  #       print("d db",self.dW.shape,self.db.shape)
         return dx
     
-# PathAffineは、デバッグされていないコードです。
-class PathAffine:
-    def __init__(self,w,b):
-        self.W = w             # 50,100 (in,out)
-        self.b = b             # 100    (out)
-        self.i = None
-        self.j = None
-        self.x = None          # N
-        self.dW = np.zeros_like(w) #100,50
-        self.db = np.zeros_like(b) #100
-    
-    def forward(self,x,i,j):
-        self.x = x
-        self.i = i         # input index
-        self.j = j         # output index
-        out = np.dot(x,self.W[i][j])+self.b[j]
-        return out
-    
-    def backward(self,dout):    #dout:1
-        dx = dout*self.W[self.i][self.j]
-        self.dW[self.i][self.j] = self.x*dout
-        self.db[self.j] = dout
-        return dx        
         
