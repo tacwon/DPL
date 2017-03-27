@@ -16,7 +16,7 @@ from TwoLayerNet import DPLTwoLayerNet
 (x_train, t_train), (x_test, t_test) = load_mnist(normalize=True, one_hot_label=True)
 
 (hidden_size,output_size)=(50,10)
-learning_rate = 0.01
+learning_rate = 0.1
 
 epoc_num = hidden_size * output_size
 iters_repeat = 10000
@@ -47,7 +47,7 @@ for i in range(iters_num):
     loss = network.loss()
     train_loss_list.append(loss)
     
-    if i % epoc_num == 0 :
+    if i % output_size == 0 :
         network.set_batch(x_train,t_train)
         train_acc = network.accuracy()
         network.set_batch(x_test,t_test)
