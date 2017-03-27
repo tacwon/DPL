@@ -18,13 +18,15 @@ class PathAffine:
         
     def init_Affine(self,x,out):
         self.x = x                  # N*784
-        self.out = out              # N*50
+        self.out = np.dot(self.x,self.W)+self.b           # N*50
         
     def forward(self,i):
         W = self.W[:,i:i+1]
 #       print("FirstAffine_Forward x,W,b,W,out", self.x.shape,self.W.shape,self.b.shape,W.shape,self.out.shape)
     
-        self.out[self.i] = np.dot(self.x,W)+self.b[self.i]       
+#       self.out = np.dot(self.x,self.W)+self.b  
+        self.out[self.i] = np.dot(self.x,W)+self.b[self.i]   
+  
         return self.out
     def backward(self,dout):    #dout:N*50
 #        print("FirstAffine_Backward dout,W,x", dout.shape,self.W.shape,self.x.shape)
