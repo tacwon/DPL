@@ -32,12 +32,12 @@ x_batch = x_train
 t_batch = t_train
 
 network = DPLTwoLayerNet(x_batch.shape[1], hidden_size, output_size)
+network.set_batch(x_batch,t_batch)
 
 for i in range(iters_num):
     
     # 勾配
     #grad = network.numerical_gradient(x_batch, t_batch)
-    network.set_batch(x_batch,t_batch)
     grad = network.gradient()
     
     # 更新
@@ -54,6 +54,8 @@ for i in range(iters_num):
         test_acc = network.accuracy()
         train_acc_list.append(train_acc)
         test_acc_list.append(test_acc)
+        network.set_batch(x_batch,t_batch)
+
     
         print("(",i//output_size,network.i,network.i_rand[network.i],"),(",train_acc,test_acc,")")
     

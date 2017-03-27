@@ -39,7 +39,9 @@ class DPLTwoLayerNet:
         self.x = x
         self.t = t
         self.batch_size = x.shape[0]
-        out=np.zeros((self.batch_size,self.hidden_size)) 
+#       out=np.zeros((self.batch_size,self.hidden_size)) 
+        out = np.dot(self.x,self.FirstAffine.W)+self.FirstAffine.b 
+
         self.FirstAffine.init_Affine(x,out)
         
     def update_i(self):

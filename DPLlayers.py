@@ -17,8 +17,8 @@ class PathAffine:
         self.db = np.zeros_like(b) #50
         
     def init_Affine(self,x,out):
-        self.x = x                  # N*784
-        self.out = np.dot(self.x,self.W)+self.b           # N*50
+        self.x = x              # N*784
+        self.out = out          # N*50
         
     def forward(self,i):
         W = self.W[:,i:i+1]
