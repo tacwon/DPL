@@ -26,8 +26,11 @@ train_loss_list = []
 train_acc_list = []
 test_acc_list = []
 
-x_batch = x_train[:3]
-t_batch = t_train[:3]
+#x_batch = x_train[:3]
+#t_batch = t_train[:3]
+x_batch = x_train
+t_batch = t_train
+
 network = DPLTwoLayerNet(x_batch.shape[1], hidden_size, output_size)
 
 for i in range(iters_num):
