@@ -53,41 +53,17 @@ class FirstAffine(Affine):
         self.dW = np.zeros_like(w) #784,50
         self.db = np.zeros_like(b) #50
         
-    def DPLforward(self,x,i):
+    def forward(self,x,i):
         self.i = i
         self.x = x
         W = self.W[:,i:i+1]
         out = np.dot(x,W)+self.b[i]
         return out
     
-    def DPLbackward(self,dout):    #dout:N*1   
+    def backward(self,dout):    #dout:N*1   
  #       print("DPLbackward dout:",dout.shape,"X:",self.x.shape,"W:",self.W.shape,"db",self.db.shape)
         dx = np.outer(dout,self.W[self.i].T)
         self.dW[:,self.i:self.i+1] = np.dot(self.x.T,dout)
-        self.db = np.sum(dout,axis=0)
-        return dx
-    
-class FirstAffine2(Affine):
-    def __init__(self,w,b):
-        super().__init__(w,b)
-        # w: 50,784 (out,in) b:50 (out) x: N*784
-        self.i = None
-        self.dW = np.zeros_like(w) #50,784
-        
-    def init_Affine(self,out):
-        self.out = out            # N*50
-        
-    def DPLforward(self,x,i):
-        self.i = i
-        self.x = x
-        W = self.W[:,i:i+1]
-#        print("DPLforward" ,"x:",x.shape,"W:",self.W.shape,W.shape,"b:",self.b.shape,"out:",self.out.shape)
-        self.out[:,i:i+1] = np.dot(x,W)+self.b[i]
-        return self.out
-    
-    def DPLbackward(self,dout):    #dout:N*50
-        dx = np.dot(dout,self.W)
-        self.dW = np.dot(self.x.T,dout)
         self.db = np.sum(dout,axis=0)
         return dx
      
@@ -99,14 +75,14 @@ class LastAffine(Affine):
         self.dW = np.zeros_like(w) #50,10
         self.db = np.zeros_like(b) #10
         
-    def DPLforward(self,x,i):
+    def forward(self,x,i):
         self.i = i
         self.x = x 
         #print("DpLforward x:",x.shape,"i:",i,"W:",self.W.shape,"b:",self.b.shape)
         out = np.outer(x,self.W[i])+self.b
         return out
     
-    def DPLbackward(self,dout):    #dout:N*10  
+    def backward(self,dout):    #dout:N*10  
         #print("DPlBacward dout:",dout.shape,"W:",self.W.shape,"db:",self.db.shape,"x:",self.x.shape)
         dx = np.dot(dout,self.W[self.i])
         self.dW[self.i] = np.dot(self.x.T,dout)

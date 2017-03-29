@@ -29,7 +29,7 @@ class DPLTwoLayerNet:
         self.i_size = hidden_size * 3 + 1 ;
         self.i_rand= np.random.randint(0,hidden_size,self.i_size)
         self.i = 0
-        self.test = 0
+        self.test = 1
         
         if (self.test == 0) :
             self.FirstAffine= FirstAffine(self.params['W1'],self.params['b1'])
@@ -54,9 +54,9 @@ class DPLTwoLayerNet:
         
     def DPLpredict(self):
         i = self.i_rand[self.i]
-        Wt1b1 = self.FirstAffine.DPLforward(self.x,i)
+        Wt1b1 = self.FirstAffine.forward(self.x,i)
         Relu = self.Relu.forward(Wt1b1,i)
-        W2b2 = self.LastAffine.DPLforward(Relu,i)
+        W2b2 = self.LastAffine.forward(Relu,i)
         #print("DPLpredict x:",self.x.shape,"W1b1:",Wt1b1.shape,"Relu:",Relu.shape,"W2b2:",W2b2.shape)
         return W2b2
     
@@ -68,7 +68,6 @@ class DPLTwoLayerNet:
         return W2b2
     
     def loss(self):
-        
         if (self.test == 0):
             y = self.DPLpredict()
         else :
@@ -77,7 +76,10 @@ class DPLTwoLayerNet:
         return self.lastlayers.forward(y,self.t)
     
     def accuracy(self):
-        y = self.predict()
+        if (self.test == 0) :
+            y = self.DPLpredict()
+        else : 
+            y = self.predict()
         y = np.argmax(y,axis=1)
         if self.t.ndim != 1 : t=np.argmax(self.t,axis=1)
         accuracy = np.sum(y == t)/float(self.x.shape[0])
@@ -99,15 +101,9 @@ class DPLTwoLayerNet:
         #backward
         dout = 1
         W2b2 = self.lastlayers.backward(dout) 
-        if (self.test == 0):
-            Relu = self.LastAffine.DPLbackward(W2b2)
-            #print("gradiant Relu:",Relu.shape,"W2b2",W2b2.shape)
-            Wt1b1 = self.Relu.backward(Relu)
-        else :
-            Relu = self.LastAffine.backward(W2b2)
-#            print("gradiant Relu:",Relu.shape,"W2b2",W2b2.shape)
-            Wt1b1 = self.Relu.backward(Relu)
-            self.FirstAffine.backward(Wt1b1)
+        Relu = self.LastAffine.backward(W2b2)
+        Wt1b1 = self.Relu.backward(Relu)
+        self.FirstAffine.backward(Wt1b1)
 #        print("x,Wt1b1,Relu,W2b2",x.shape,Wt1b1.shape,Relu.shape,W2b2.shape)
         
         grads = {}
