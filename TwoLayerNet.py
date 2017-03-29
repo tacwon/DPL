@@ -9,7 +9,7 @@ import sys,os
 sys.path.append(os.pardir)
 import numpy as np
 
-from DPLlayers import FirstAffine,LastAffine,Affine,DPLRelu
+from DPLlayers import FirstAffine,LastAffine,DPLRelu
 from common.layers import Relu,SoftmaxWithLoss
 from common.gradient import numerical_gradient
 
@@ -23,21 +23,15 @@ class DPLTwoLayerNet:
         self.params['W2']=np.random.randn(hidden_size,output_size)/np.sqrt(hidden_size) #Xaveir
         self.params['b2']=np.zeros(output_size)
         
-        
-        # 隠れレイヤーのi,jの擬似乱数生成
+        # 隠れレイヤーの擬似乱数生成
         self.i_size = hidden_size * 3 + 1 ;
         self.i_rand= np.random.randint(0,hidden_size,self.i_size)
         self.i = 0
-        self.test = 1
         
-        if (self.test == 0) :
-            self.FirstAffine= FirstAffine(self.params['W1'],self.params['b1'])
-            self.Relu=       DPLRelu()
-            self.LastAffine= LastAffine(self.params['W2'],self.params['b2'])
-        else :
-            self.FirstAffine= Affine(self.params['W1'],self.params['b1'])
-            self.Relu=       Relu()
-            self.LastAffine= Affine(self.params['W2'],self.params['b2'])
+        self.FirstAffine= FirstAffine(self.params['W1'],self.params['b1'])
+        self.DPLRelu=    DPLRelu()
+        self.LastAffine= LastAffine(self.params['W2'],self.params['b2'])
+        self.Relu=       Relu()  # for accuracy
         self.lastlayers = SoftmaxWithLoss()
         
             
@@ -52,9 +46,9 @@ class DPLTwoLayerNet:
         
     def DPLpredict(self):
         i = self.i_rand[self.i]
-        Wt1b1 = self.FirstAffine.forward(self.x,i)
-        Relu = self.Relu.forward(Wt1b1,i)
-        W2b2 = self.LastAffine.forward(Relu,i)
+        Wt1b1 = self.FirstAffine.DPLforward(self.x,i)
+        Relu = self.DPLRelu.DPLforward(Wt1b1,i)
+        W2b2 = self.LastAffine.DPLforward(Relu,i)
         #print("DPLpredict x:",self.x.shape,"W1b1:",Wt1b1.shape,"Relu:",Relu.shape,"W2b2:",W2b2.shape)
         return W2b2
     
@@ -66,18 +60,12 @@ class DPLTwoLayerNet:
         return W2b2
     
     def loss(self):
-        if (self.test == 0):
-            y = self.DPLpredict()
-        else :
-            y = self.predict()
+        y = self.DPLpredict()
         #print("loss y:",y.shape,"t",self.t.shape)    
         return self.lastlayers.forward(y,self.t)
     
     def accuracy(self):
-        if (self.test == 0) :
-            y = self.DPLpredict()
-        else : 
-            y = self.predict()
+        y = self.predict()
         y = np.argmax(y,axis=1)
         if self.t.ndim != 1 : t=np.argmax(self.t,axis=1)
         accuracy = np.sum(y == t)/float(self.x.shape[0])
@@ -85,7 +73,6 @@ class DPLTwoLayerNet:
     
     def numerical_gradient(self):
         loss_W = lambda W:self.loss()
-        
         grads = {}
         grads['W1']=numerical_gradient(loss_W,self.params['W1'])
         grads['b1']=numerical_gradient(loss_W,self.params['b1'])
@@ -99,11 +86,10 @@ class DPLTwoLayerNet:
         #backward
         dout = 1
         W2b2 = self.lastlayers.backward(dout) 
-        Relu = self.LastAffine.backward(W2b2)
-        Wt1b1 = self.Relu.backward(Relu)
-        self.FirstAffine.backward(Wt1b1)
+        Relu = self.LastAffine.DPLbackward(W2b2)
+        Wt1b1 = self.DPLRelu.DPLbackward(Relu)
+        self.FirstAffine.DPLbackward(Wt1b1)
 #        print("x,Wt1b1,Relu,W2b2",x.shape,Wt1b1.shape,Relu.shape,W2b2.shape)
-        
         grads = {}
         grads['W1']=self.FirstAffine.dW
         grads['b1']=self.FirstAffine.db

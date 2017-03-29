@@ -25,25 +25,23 @@ class Affine(object):
         self.dW = np.dot(self.x.T,dout)
         self.db = np.sum(dout,axis=0)
         return dx
- 
-class DPLRelu:
+    
+class DPLRelu :
     def __init__(self):
         self.mask = None
 
-    def forward(self, x,i=0):
+    def DPLforward(self, x,i=0):
         #print("DPLRelu:",x.shape,i)
         self.mask = (x <= 0)
         out = x.copy()
         out[self.mask] = 0
         return out
 
-    def backward(self, dout):
+    def DPLbackward(self, dout):
         dout = dout[:,np.newaxis]
         dout[self.mask] = 0
         dx = dout
-
         return dx
-    
     
 class FirstAffine(Affine):
     def __init__(self,w,b):
@@ -53,20 +51,20 @@ class FirstAffine(Affine):
         self.dW = np.zeros_like(w) #784,50
         self.db = np.zeros_like(b) #50
         
-    def forward(self,x,i):
+    def DPLforward(self,x,i):
         self.i = i
         self.x = x
         W = self.W[:,i:i+1]
         out = np.dot(x,W)+self.b[i]
         return out
     
-    def backward(self,dout):    #dout:N*1   
+    def DPLbackward(self,dout):    #dout:N*1   
  #       print("DPLbackward dout:",dout.shape,"X:",self.x.shape,"W:",self.W.shape,"db",self.db.shape)
         dx = np.outer(dout,self.W[self.i].T)
         self.dW[:,self.i:self.i+1] = np.dot(self.x.T,dout)
         self.db = np.sum(dout,axis=0)
         return dx
-     
+
 class LastAffine(Affine):
     def __init__(self,w,b):
         super().__init__(w,b)
@@ -75,17 +73,16 @@ class LastAffine(Affine):
         self.dW = np.zeros_like(w) #50,10
         self.db = np.zeros_like(b) #10
         
-    def forward(self,x,i):
+    def DPLforward(self,x,i):
         self.i = i
         self.x = x 
         #print("DpLforward x:",x.shape,"i:",i,"W:",self.W.shape,"b:",self.b.shape)
         out = np.outer(x,self.W[i])+self.b
         return out
     
-    def backward(self,dout):    #dout:N*10  
+    def DPLbackward(self,dout):    #dout:N*10  
         #print("DPlBacward dout:",dout.shape,"W:",self.W.shape,"db:",self.db.shape,"x:",self.x.shape)
         dx = np.dot(dout,self.W[self.i])
         self.dW[self.i] = np.dot(self.x.T,dout)
         self.db = np.sum(dout,axis=0)
         return dx
-      
