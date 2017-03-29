@@ -24,7 +24,7 @@ class DPLTwoLayerNet:
         self.params['b2']=np.zeros(output_size)
         
         # 隠れレイヤーの擬似乱数生成
-        self.i_size = hidden_size * 3 + 1 ;
+        self.i_size = hidden_size * 7 + 1 ;
         self.i_rand= np.random.randint(0,hidden_size,self.i_size)
         self.i = 0
         

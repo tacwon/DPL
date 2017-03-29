@@ -19,10 +19,14 @@ from common.optimizer import AdaGrad
 
 (input_size,hidden_size,output_size)=(784,50,10)
 
-epoc_num = hidden_size * output_size
-iters_repeat = 10000
-iters_num = iters_repeat * epoc_num
+iters_num = 10000
+train_size = x_train.shape[0]
 batch_size = 1
+inter_per_epoch = max(train_size//batch_size,1)
+iters_repeat = iters_num * inter_per_epoch
+
+epoch_num = hidden_size * output_size * inter_per_epoch
+iters_num = iters_repeat * epoch_num
 
 train_loss_list = []
 train_acc_list = []
