@@ -15,7 +15,7 @@ class Affine(object):
         self.dW = None         #50,10
         self.db = None             #10
         
-    def forward(self,x):
+    def forward(self,x,i=0):
         self.x = x
         out = np.dot(x,self.W)+self.b
         return out

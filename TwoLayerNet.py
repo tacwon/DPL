@@ -17,11 +17,10 @@ from common.gradient import numerical_gradient
 class DPLTwoLayerNet:
     
     def __init__(self,input_size,hidden_size,output_size,weight_init_std=0.01):
-        self.hidden_size = hidden_size
         self.params = {}
-        self.params['W1']=weight_init_std*np.random.randn(input_size,hidden_size)
+        self.params['W1']=np.random.randn(input_size,hidden_size)/np.sqrt(2*input_size) #He
         self.params['b1']=np.zeros(hidden_size)
-        self.params['W2']=weight_init_std*np.random.randn(hidden_size,output_size)
+        self.params['W2']=np.random.randn(hidden_size,output_size)/np.sqrt(hidden_size) #Xaveir
         self.params['b2']=np.zeros(output_size)
         
         
@@ -35,12 +34,11 @@ class DPLTwoLayerNet:
             self.FirstAffine= FirstAffine(self.params['W1'],self.params['b1'])
             self.Relu=       DPLRelu()
             self.LastAffine= LastAffine(self.params['W2'],self.params['b2'])
-            self.lastlayers = SoftmaxWithLoss()
         else :
             self.FirstAffine= Affine(self.params['W1'],self.params['b1'])
             self.Relu=       Relu()
             self.LastAffine= Affine(self.params['W2'],self.params['b2'])
-            self.lastlayers = SoftmaxWithLoss()
+        self.lastlayers = SoftmaxWithLoss()
         
             
     def set_batch(self,x,t):
