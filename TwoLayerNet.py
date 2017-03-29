@@ -9,7 +9,7 @@ import sys,os
 sys.path.append(os.pardir)
 import numpy as np
 
-from DPLlayers import PathAffine,Affine
+from DPLlayers import FirstAffine,LastAffine,FirstAffine2,Affine,DPLRelu
 from common.layers import Relu,SoftmaxWithLoss
 from common.gradient import numerical_gradient
 
@@ -23,48 +23,67 @@ class DPLTwoLayerNet:
         self.params['b1']=np.zeros(hidden_size)
         self.params['W2']=weight_init_std*np.random.randn(hidden_size,output_size)
         self.params['b2']=np.zeros(output_size)
+        
+        
         # 隠れレイヤーのi,jの擬似乱数生成
         self.i_size = hidden_size * 3 + 1 ;
         self.i_rand= np.random.randint(0,hidden_size,self.i_size)
         self.i = 0
+        self.test = 1
         
+        if (self.test == 0) :
+            self.FirstAffine= FirstAffine(self.params['W1'],self.params['b1'])
+            self.Relu=       DPLRelu()
+            self.LastAffine= LastAffine(self.params['W2'],self.params['b2'])
+            self.lastlayers = SoftmaxWithLoss()
+        elif (self.test ==1):
+            self.FirstAffine= FirstAffine2(self.params['W1'],self.params['b1'])
+            self.Relu=       DPLRelu()
+            self.LastAffine= LastAffine(self.params['W2'],self.params['b2'])
+            self.lastlayers = SoftmaxWithLoss()
+        else :
+            self.FirstAffine= Affine(self.params['W1'],self.params['b1'])
+            self.Relu=       Relu()
+            self.LastAffine= Affine(self.params['W2'],self.params['b2'])
+            self.lastlayers = SoftmaxWithLoss()
         
-       
-        self.FirstAffine= PathAffine(self.params['W1'],self.params['b1'])
-        self.Relu=       Relu()
-        self.LastAffine= Affine(self.params['W2'],self.params['b2'])
-        self.lastlayers = SoftmaxWithLoss()
-    
+            
     def set_batch(self,x,t):
         self.x = x
         self.t = t
         self.batch_size = x.shape[0]
 #       out=np.zeros((self.batch_size,self.hidden_size)) 
-        out = np.dot(self.x,self.FirstAffine.W)+self.FirstAffine.b 
+#       if FirtsAffine2 is used out (N*50)
+        if (self.test == 1) :
+            out = np.dot(self.x,self.FirstAffine.W)+self.FirstAffine.b 
+            self.FirstAffine.init_Affine(out)
 
-        self.FirstAffine.init_Affine(x,out)
-        
     def update_i(self):
         self.i = (self.i+1) % self.i_size
         return self.i 
         
     def DPLpredict(self):
         i = self.i_rand[self.i]
-        Wt1b1 = self.FirstAffine.DPLforward(i)
-        Relu = self.Relu.forward(Wt1b1)
-        W2b2 = self.LastAffine.forward(Relu)
-#       print("x,Wt1b1,Relu,W2b2",x.shape,Wt1b1.shape,Relu.shape,W2b2.shape)
+        Wt1b1 = self.FirstAffine.DPLforward(self.x,i)
+        Relu = self.Relu.forward(Wt1b1,i)
+        W2b2 = self.LastAffine.DPLforward(Relu,i)
+        #print("DPLpredict x:",self.x.shape,"W1b1:",Wt1b1.shape,"Relu:",Relu.shape,"W2b2:",W2b2.shape)
         return W2b2
     
     def predict(self):
-        Wt1b1 = self.FirstAffine.forward()
+        Wt1b1 = self.FirstAffine.forward(self.x)
         Relu = self.Relu.forward(Wt1b1)
         W2b2 = self.LastAffine.forward(Relu)
 #       print("x,Wt1b1,Relu,W2b2",x.shape,Wt1b1.shape,Relu.shape,W2b2.shape)
         return W2b2
     
     def loss(self):
-        y = self.DPLpredict()
+        
+        if (self.test == 0 or self.test == 1):
+            y = self.DPLpredict()
+        else :
+            y = self.predict()
+        #print("loss y:",y.shape,"t",self.t.shape)    
         return self.lastlayers.forward(y,self.t)
     
     def accuracy(self):
@@ -89,10 +108,23 @@ class DPLTwoLayerNet:
         self.loss()
         #backward
         dout = 1
-        W2b2 = self.lastlayers.backward(dout)
-        Relu = self.LastAffine.backward(W2b2)
-        Wt1b1 = self.Relu.backward(Relu)
-        self.FirstAffine.backward(Wt1b1)
+        W2b2 = self.lastlayers.backward(dout) 
+        if (self.test == 0):
+            Relu = self.LastAffine.DPLbackward(W2b2)
+            #print("gradiant Relu:",Relu.shape,"W2b2",W2b2.shape)
+            Wt1b1 = self.Relu.backward(Relu)
+            self.FirstAffine.DPLbackward(Wt1b1)
+        elif (self.test == 1):
+            Relu = self.LastAffine.backward(W2b2)
+#            print("gradiant Relu:",Relu.shape,"W2b2",W2b2.shape)
+            Wt1b1 = self.Relu.backward(Relu)
+            self.FirstAffine.backward(Wt1b1)
+
+        else :
+            Relu = self.LastAffine.backward(W2b2)
+#            print("gradiant Relu:",Relu.shape,"W2b2",W2b2.shape)
+            Wt1b1 = self.Relu.backward(Relu)
+            self.FirstAffine.backward(Wt1b1)
 #        print("x,Wt1b1,Relu,W2b2",x.shape,Wt1b1.shape,Relu.shape,W2b2.shape)
         
         grads = {}

@@ -7,6 +7,7 @@ Created on Sun Mar 26 06:43:00 2017
 """
 
 import sys, os
+import numpy as np
 sys.path.append(os.pardir)
 
 from dataset.mnist import load_mnist
@@ -15,12 +16,13 @@ from TwoLayerNet import DPLTwoLayerNet
 # データの読み込み
 (x_train, t_train), (x_test, t_test) = load_mnist(normalize=True, one_hot_label=True)
 
-(hidden_size,output_size)=(50,10)
-learning_rate = 0.1
+(input_size,hidden_size,output_size)=(784,50,10)
+learning_rate = 0.01
 
 epoc_num = hidden_size * output_size
 iters_repeat = 10000
 iters_num = iters_repeat * epoc_num
+batch_size = 500
 
 train_loss_list = []
 train_acc_list = []
@@ -28,12 +30,16 @@ test_acc_list = []
 
 #x_batch = x_train[:3]
 #t_batch = t_train[:3]
-x_batch = x_train
-t_batch = t_train
+train_size = t_train.shape[0]
+network = DPLTwoLayerNet(input_size, hidden_size, output_size)
 
-network = DPLTwoLayerNet(x_batch.shape[1], hidden_size, output_size)
-network.set_batch(x_batch,t_batch)
+def set_batch() :
+    batch_mask = np.random.choice(train_size,batch_size)
+    x_batch = x_train[batch_mask]
+    t_batch = t_train[batch_mask]
+    network.set_batch(x_batch,t_batch)
 
+set_batch()
 for i in range(iters_num):
     
     # 勾配
@@ -47,16 +53,16 @@ for i in range(iters_num):
     loss = network.loss()
     train_loss_list.append(loss)
     
-    if i % output_size == 0 :
+    if i % hidden_size == 0 :
         network.set_batch(x_train,t_train)
         train_acc = network.accuracy()
         network.set_batch(x_test,t_test)
         test_acc = network.accuracy()
         train_acc_list.append(train_acc)
         test_acc_list.append(test_acc)
-        network.set_batch(x_batch,t_batch)
+        set_batch()
 
     
-        print("(",i//output_size,network.i,network.i_rand[network.i],"),(",train_acc,test_acc,")")
+        print("(",i//hidden_size,network.i,network.i_rand[network.i],"),(",train_acc,test_acc,")")
     
     network.update_i()    
