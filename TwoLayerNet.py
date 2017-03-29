@@ -9,7 +9,7 @@ import sys,os
 sys.path.append(os.pardir)
 import numpy as np
 
-from DPLlayers import FirstAffine,LastAffine,FirstAffine2,Affine,DPLRelu
+from DPLlayers import FirstAffine,LastAffine,Affine,DPLRelu
 from common.layers import Relu,SoftmaxWithLoss
 from common.gradient import numerical_gradient
 
@@ -29,15 +29,10 @@ class DPLTwoLayerNet:
         self.i_size = hidden_size * 3 + 1 ;
         self.i_rand= np.random.randint(0,hidden_size,self.i_size)
         self.i = 0
-        self.test = 1
+        self.test = 0
         
         if (self.test == 0) :
             self.FirstAffine= FirstAffine(self.params['W1'],self.params['b1'])
-            self.Relu=       DPLRelu()
-            self.LastAffine= LastAffine(self.params['W2'],self.params['b2'])
-            self.lastlayers = SoftmaxWithLoss()
-        elif (self.test ==1):
-            self.FirstAffine= FirstAffine2(self.params['W1'],self.params['b1'])
             self.Relu=       DPLRelu()
             self.LastAffine= LastAffine(self.params['W2'],self.params['b2'])
             self.lastlayers = SoftmaxWithLoss()
@@ -52,11 +47,6 @@ class DPLTwoLayerNet:
         self.x = x
         self.t = t
         self.batch_size = x.shape[0]
-#       out=np.zeros((self.batch_size,self.hidden_size)) 
-#       if FirtsAffine2 is used out (N*50)
-        if (self.test == 1) :
-            out = np.dot(self.x,self.FirstAffine.W)+self.FirstAffine.b 
-            self.FirstAffine.init_Affine(out)
 
     def update_i(self):
         self.i = (self.i+1) % self.i_size
@@ -79,7 +69,7 @@ class DPLTwoLayerNet:
     
     def loss(self):
         
-        if (self.test == 0 or self.test == 1):
+        if (self.test == 0):
             y = self.DPLpredict()
         else :
             y = self.predict()
@@ -113,13 +103,6 @@ class DPLTwoLayerNet:
             Relu = self.LastAffine.DPLbackward(W2b2)
             #print("gradiant Relu:",Relu.shape,"W2b2",W2b2.shape)
             Wt1b1 = self.Relu.backward(Relu)
-            self.FirstAffine.DPLbackward(Wt1b1)
-        elif (self.test == 1):
-            Relu = self.LastAffine.backward(W2b2)
-#            print("gradiant Relu:",Relu.shape,"W2b2",W2b2.shape)
-            Wt1b1 = self.Relu.backward(Relu)
-            self.FirstAffine.backward(Wt1b1)
-
         else :
             Relu = self.LastAffine.backward(W2b2)
 #            print("gradiant Relu:",Relu.shape,"W2b2",W2b2.shape)
