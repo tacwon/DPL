@@ -56,7 +56,7 @@ for i in range(iters_num):
     loss = network.loss()
     train_loss_list.append(loss)
     
-    if i % epoc_num == 0 :
+    if i % epoch_num == 0 :
         network.set_batch(x_train,t_train)
         train_acc = network.accuracy()
         network.set_batch(x_test,t_test)
@@ -66,6 +66,6 @@ for i in range(iters_num):
         set_batch()
 
     
-        print("(",i//epoc_num,network.i,network.i_rand[network.i],"),(",train_acc,test_acc,")")
+        print("(",i//epoch_num,network.i,network.i_rand[network.i],"),(",train_acc,test_acc,")")
     
     network.update_i()    
