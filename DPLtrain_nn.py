@@ -25,7 +25,8 @@ batch_size = 1
 inter_per_epoch = max(train_size//batch_size,1)
 iters_repeat = iters_num * inter_per_epoch
 
-epoch_num = hidden_size * output_size * inter_per_epoch
+#epoch_num = hidden_size * output_size * inter_per_epoch
+epoch_num = inter_per_epoch
 iters_num = iters_repeat * epoch_num
 
 train_loss_list = []
@@ -47,6 +48,7 @@ for i in range(iters_num):
     
     # 勾配
     #grad = network.numerical_gradient(x_batch, t_batch)
+    set_batch()
     grad = network.gradient()
     params = network.params
     
@@ -63,7 +65,6 @@ for i in range(iters_num):
         test_acc = network.accuracy()
         train_acc_list.append(train_acc)
         test_acc_list.append(test_acc)
-        set_batch()
 
     
         print("(",i//epoch_num,network.i,network.i_rand[network.i],"),(",train_acc,test_acc,")")
