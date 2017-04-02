@@ -165,10 +165,10 @@ class DPLPath(FirstPath):
         return out
     
     def DPLbackward(self,dout):    #dout:N  
-        #print("DPLPath-Bacward dout:",dout.shape,"W:",self.W.shape,"db:",self.db.shape,"x:",self.x.shape)
+        #print("DPLPath-Bacward dout:",dout.shape,"W:",self.W.shape,"db:",self.db.shape,"x:",self.x.shape,"pre_i",self.pre_i,"i",self.i)
         dx = dout*self.W[self.pre_i][self.i]
         self.dW[self.pre_i][self.i] = np.dot(self.x.T,dout)
-        self.db[self.pre_i] = np.sum(dout,axis=0)
+        self.db[self.i] = np.sum(dout,axis=0)
         #print("DPLPath-Bacward dout:",dout.shape,"W:",self.W.shape,"db:",self.db.shape,"x:",self.x.shape,"dx:",dx.shape)
         return dx
 
