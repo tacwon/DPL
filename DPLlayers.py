@@ -87,7 +87,7 @@ class DPLRelu(Relu,PathIndex) :
         return out
 
     def DPLbackward(self, dout):
-        dout = dout[:,np.newaxis]
+        #dout = dout[:,np.newaxis]
         dout[self.mask] = 0
         dx = dout
         return dx
@@ -129,6 +129,7 @@ class FirstPath(Affine,PathIndex):
         dx = np.outer(dout,self.W[self.i].T)
         self.dW[:,self.i:self.i+1] = np.dot(self.x.T,dout)
         self.db = np.sum(dout,axis=0)
+        #print("FirstPath-backward dout:",dout.shape,"X:",self.x.shape,"W:",self.W.shape,"db",self.db.shape,"dx:",dx.shape)
         return dx
 
 class LastPath(FirstPath):
@@ -145,8 +146,11 @@ class LastPath(FirstPath):
     def DPLbackward(self,dout):    #dout:N*10  
         #print("LastPath-Bacward dout:",dout.shape,"W:",self.W.shape,"db:",self.db.shape,"x:",self.x.shape)
         dx = np.dot(dout,self.W[self.pre_i])
+        dx = dx[:,np.newaxis]
         self.dW[self.pre_i] = np.dot(self.x.T,dout)
         self.db = np.sum(dout,axis=0)
+        #print("LastPath-Bacward dout:",dout.shape,"W:",self.W.shape,"db:",self.db.shape,"x:",self.x.shape,"dx:",dx.shape)
+
         return dx
     
 class DPLPath(FirstPath):
@@ -165,5 +169,6 @@ class DPLPath(FirstPath):
         dx = dout*self.W[self.pre_i][self.i]
         self.dW[self.pre_i][self.i] = np.dot(self.x.T,dout)
         self.db[self.pre_i] = np.sum(dout,axis=0)
+        #print("DPLPath-Bacward dout:",dout.shape,"W:",self.W.shape,"db:",self.db.shape,"x:",self.x.shape,"dx:",dx.shape)
         return dx
 
