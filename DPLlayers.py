@@ -59,16 +59,18 @@ class Affine(object):
 class PathIndex(object) :
     def __init__(self,size) :
         #print("PathIndex size:",size)
-        self.idx = 0
+        #self.idx = 0
         self.i = None
         self.pre_i = None
-        self.list_size = size*3+1
-        self.rand_list = np.random.randint(0,size,self.list_size)
+        self.size = size
+        #self.list_size = size*11+1
+        #self.rand_list = np.random.randint(0,size,self.list_size)
         
     def update(self,pre_i):
         self.pre_i = pre_i
-        self.idx = (self.idx+1) % self.list_size
-        self.i = self.rand_list[self.idx]
+        self.i = np.random.randint(0,self.size)
+        #self.idx = (self.idx+1) % self.list_size
+        #self.i = self.rand_list[self.idx]
         return self.i
 
 class DPLRelu(Relu,PathIndex) :
