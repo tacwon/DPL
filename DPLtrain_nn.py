@@ -11,17 +11,17 @@ import numpy as np
 sys.path.append(os.pardir)
 
 from dataset.mnist import load_mnist
-from TwoLayerNet import DPLTwoLayerNet
+from MultiLayerNet import DPLMultiLayerNet
 from common.optimizer import AdaGrad
 
 # データの読み込み
 (x_train, t_train), (x_test, t_test) = load_mnist(normalize=True, one_hot_label=True)
 
-(input_size,hidden_size,output_size)=(784,50,10)
+(input_size,hidden_size,output_size)=(784,[50],10)
 
 iters_num = 10000
 train_size = x_train.shape[0]
-batch_size = 1
+batch_size = 5
 inter_per_epoch = max(train_size//batch_size,1)
 iters_repeat = iters_num * inter_per_epoch
 
@@ -34,8 +34,8 @@ train_acc_list = []
 test_acc_list = []
 
 train_size = t_train.shape[0]
-network = DPLTwoLayerNet(input_size, hidden_size, output_size)
-optimizer = AdaGrad()
+network = DPLMultiLayerNet(input_size, hidden_size, output_size,batch_size)
+optimizer = AdaGrad()    # very good
 
 def set_batch() :
     batch_mask = np.random.choice(train_size,batch_size)
@@ -43,15 +43,12 @@ def set_batch() :
     t_batch = t_train[batch_mask]
     network.set_batch(x_batch,t_batch)
 
-set_batch()
 for i in range(iters_num):
-    
     # 勾配
     #grad = network.numerical_gradient(x_batch, t_batch)
     set_batch()
     grad = network.gradient()
     params = network.params
-    
     # 更新
     optimizer.update(params,grad)
     
@@ -65,8 +62,5 @@ for i in range(iters_num):
         test_acc = network.accuracy()
         train_acc_list.append(train_acc)
         test_acc_list.append(test_acc)
-
     
-        print("(",i//epoch_num,network.i,network.i_rand[network.i],"),(",train_acc,test_acc,")")
-    
-    network.update_i()    
+        print("(",i//epoch_num,network.update_path.get(),"),(",train_acc,test_acc,")")
