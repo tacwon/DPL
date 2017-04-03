@@ -65,7 +65,7 @@ class DPLMultiLayerNet:
         
         for idx in range(2, self.hidden_layer_num+1):
             #print("idx:",idx)
-            self.layers['Path' + str(idx)] = DPLPath(self.params['W' + str(idx)],
+            self.layers['Path' + str(idx)] =DPLPath(self.params['W' + str(idx)],
                                                       self.params['b' + str(idx)])
             self.layers['Activation_function' + str(idx)] = activation_layer[activation]()
 
@@ -94,8 +94,10 @@ class DPLMultiLayerNet:
             elif str(weight_init_std).lower() in ('sigmoid', 'xavier'):
                 scale = np.sqrt(1.0 / all_size_list[idx - 1])  # sigmoidを使う場合に推奨される初期値
             if (idx == 1) : scale /= self.batch_size   #FirstPath must be divided by batch_size
-            
             self.params['W' + str(idx)] = scale * np.random.randn(all_size_list[idx-1], all_size_list[idx])
+            #self.params['W' + str(idx)] = scale * np.abs(np.random.randn(all_size_list[idx-1], all_size_list[idx]))
+            #elf.params['W' + str(idx)] = scale * np.ones([all_size_list[idx-1], all_size_list[idx]])
+
             self.params['b' + str(idx)] = np.zeros(all_size_list[idx])
         #print("param:",self.params)
             
@@ -115,6 +117,7 @@ class DPLMultiLayerNet:
         x = self.x
         for layer in self.layers.values():
             x = layer.DPLforward(x)
+            #x = layer.forward(x)
             #print("DPLPredict x:",x.shape,"self.x",self.x.shape)
         return x
 
@@ -126,7 +129,7 @@ class DPLMultiLayerNet:
         """
         y = self.DPLpredict()
         #print("loss y:",y.shape,"t",self.t.shape)    
-        return self.last_layer.forward(y, self.t) 
+        return self.last_layer.forward(y, self.t)
 
     def accuracy(self):
         y = self.predict()
@@ -169,8 +172,7 @@ class DPLMultiLayerNet:
         layers = list(self.layers.values())
         layers.reverse()
         for layer in layers:
-            dout = layer.DPLbackward(dout)
-
+            dout = layer.DPLbackward(dout)   # Fix comfirmed "backward" was not work
         # 設定
         grads = {}
         for idx in range(1, self.hidden_layer_num+2):

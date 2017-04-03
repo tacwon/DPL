@@ -12,7 +12,7 @@ sys.path.append(os.pardir)
 
 from dataset.mnist import load_mnist
 from MultiLayerNet import DPLMultiLayerNet
-from common.optimizer import AdaGrad
+from common.optimizer import AdaGrad,Adam,SGD
 
 # データの読み込み
 (x_train, t_train), (x_test, t_test) = load_mnist(normalize=True, one_hot_label=True)
@@ -21,7 +21,7 @@ from common.optimizer import AdaGrad
 
 iters_num = 10000
 train_size = x_train.shape[0]
-batch_size = 5
+batch_size = 10
 inter_per_epoch = max(train_size//batch_size,1)
 iters_repeat = iters_num * inter_per_epoch
 
@@ -34,8 +34,11 @@ train_acc_list = []
 test_acc_list = []
 
 train_size = t_train.shape[0]
-network = DPLMultiLayerNet(input_size, hidden_size, output_size,batch_size)
+# sigmoid better than Relu for DPL
+network = DPLMultiLayerNet(input_size, hidden_size, output_size,batch_size,activation="sigmoid")
 optimizer = AdaGrad()    # very good
+#optimizer = Adam()
+#optimizer = SGD()
 
 def set_batch() :
     batch_mask = np.random.choice(train_size,batch_size)
