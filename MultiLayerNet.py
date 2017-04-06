@@ -9,7 +9,7 @@ import sys, os
 sys.path.append(os.pardir)  # 親ディレクトリのファイルをインポートするための設定
 import numpy as np
 
-from DPLlayers import FirstPath,LastPath,DPLPath,DPLSigmoid,DPLRelu
+from DPLlayers import DPLSigmoid,DPLRelu,Through,FirstPath,LastPath,DPLPath
 from collections import OrderedDict
 from common.layers import SoftmaxWithLoss
 from common.gradient import numerical_gradient
@@ -41,26 +41,29 @@ class DPLMultiLayerNet:
         'sigmoid'または'xavier'を指定した場合は「Xavierの初期値」を設定
     """
     def __init__(self, input_size, hidden_size_list, output_size,batch_size=1,
-                 activation='relu', weight_init_std='relu'):
+                 activation='relu', weight_init_std='sigmoid',dpl='dpl'):
         self.input_size = input_size
         self.output_size = output_size
         self.hidden_size_list = hidden_size_list
         self.hidden_layer_num = len(hidden_size_list)
         self.batch_size = batch_size
+        self.dpl = dpl
         self.params = {}
         self.layers = OrderedDict()
         # 重みの初期化
-        self.__init_weight(weight_init_std)
+        self.__init_weight(weight_init_std,dpl)
         # レイヤの生成
-        self.__init_wb(activation)
+        self.__init_wb(activation,dpl)
         #print("layers:",self.layers)
         self.update_path = update_path(self.layers)
     
-    def __init_wb(self,activation) :
+    def __init_wb(self,activation,dpl) :
         """レイヤー生成
         """
-        activation_layer = {'sigmoid': DPLSigmoid, 'relu': DPLRelu}
-        self.layers['Path1'] = FirstPath(self.params['W1'],self.params['b1'])
+        activation_layer = {'sigmoid': DPLSigmoid, 'relu': DPLRelu,'through':Through}
+
+        #print("_init_wb activation",activation,"dpl",dpl)
+        self.layers['Path1'] = FirstPath(self.params['W1'],self.params['b1'],self.batch_size)
         self.layers['Activation_function1'] = activation_layer[activation]()
         
         for idx in range(2, self.hidden_layer_num+1):
@@ -71,11 +74,11 @@ class DPLMultiLayerNet:
 
         idx = self.hidden_layer_num + 1
         self.layers['Path' + str(idx)] = LastPath(self.params['W' + str(idx)],
-            self.params['b' + str(idx)])
+            self.params['b' + str(idx)],self.batch_size)
 
         self.last_layer = SoftmaxWithLoss()
 
-    def __init_weight(self, weight_init_std):
+    def __init_weight(self, weight_init_std,dpl):
         """重みの初期値設定
 
         Parameters
@@ -91,13 +94,11 @@ class DPLMultiLayerNet:
             scale = weight_init_std
             if str(weight_init_std).lower() in ('relu', 'he'):
                 scale = np.sqrt(2.0 / all_size_list[idx - 1])  # ReLUを使う場合に推奨される初期値
-            elif str(weight_init_std).lower() in ('sigmoid', 'xavier'):
+            elif str(weight_init_std).lower() in ('sigmoid', 'xavier','through'):
                 scale = np.sqrt(1.0 / all_size_list[idx - 1])  # sigmoidを使う場合に推奨される初期値
-            if (idx == 1) : scale /= self.batch_size   #FirstPath must be divided by batch_size
-            self.params['W' + str(idx)] = scale * np.random.randn(all_size_list[idx-1], all_size_list[idx])
-            #self.params['W' + str(idx)] = scale * np.abs(np.random.randn(all_size_list[idx-1], all_size_list[idx]))
-            #elf.params['W' + str(idx)] = scale * np.ones([all_size_list[idx-1], all_size_list[idx]])
-
+            rand = np.random.randn(all_size_list[idx-1], all_size_list[idx])
+            if dpl == 'dpl':rand = np.fabs(rand)
+            self.params['W' + str(idx)] = scale * rand
             self.params['b' + str(idx)] = np.zeros(all_size_list[idx])
         #print("param:",self.params)
             
@@ -110,6 +111,7 @@ class DPLMultiLayerNet:
         x = self.x
         for layer in self.layers.values():
             x = layer.forward(x)
+            #print("Predict x:",x.shape,"self.x",self.x.shape)
         return x
         
     def DPLpredict(self):
@@ -117,7 +119,6 @@ class DPLMultiLayerNet:
         x = self.x
         for layer in self.layers.values():
             x = layer.DPLforward(x)
-            #x = layer.forward(x)
             #print("DPLPredict x:",x.shape,"self.x",self.x.shape)
         return x
 
@@ -127,13 +128,18 @@ class DPLMultiLayerNet:
         -------
         損失関数の値
         """
-        y = self.DPLpredict()
+        if self.dpl == 'dpl' :
+            y = self.DPLpredict()
+        else:
+            y = self.predict()
         #print("loss y:",y.shape,"t",self.t.shape)    
+
         return self.last_layer.forward(y, self.t)
 
     def accuracy(self):
         y = self.predict()
         y = np.argmax(y, axis=1)
+        #print("accracy y:",y.shape,"t:",self.t.shape)
         if self.t.ndim != 1 : t = np.argmax(self.t, axis=1)
         accuracy = np.sum(y == t) / float(self.x.shape[0])
         return accuracy
@@ -171,8 +177,13 @@ class DPLMultiLayerNet:
         dout = self.last_layer.backward(dout)
         layers = list(self.layers.values())
         layers.reverse()
-        for layer in layers:
-            dout = layer.DPLbackward(dout)   # Fix comfirmed "backward" was not work
+        if self.dpl == 'dpl' :
+            for layer in layers:
+                dout = layer.DPLbackward(dout)   # Fix comfirmed "backward" was not work for DPLforward
+        else:
+            for layer in layers:
+                dout = layer.backward(dout)   
+
         # 設定
         grads = {}
         for idx in range(1, self.hidden_layer_num+2):
